@@ -35,3 +35,5 @@ jobs:
             git commit -m "Update availability state"
             git push
           fi
+
+# Schedule note: GitHub may delay cron runs by 5-15 min under load.
