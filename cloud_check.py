@@ -2,7 +2,7 @@
 """
 Cloud variant of the Cherry Orchard ticket monitor, run by GitHub Actions.
 
-Checks the RSC API for the three watched performances and emails via Gmail
+Checks the RSC API for the watched performances and emails via Gmail
 SMTP when one is no longer sold out. State is kept in state.json (committed
 back to the repo by the workflow) so alerts fire on transitions, not every run.
 
@@ -28,7 +28,7 @@ LISTING_URL = (
     "?startdate=2026-07-10&enddate=2026-08-29"
 )
 PRODUCTION_TITLE = "The Cherry Orchard"
-TARGET_DATES = {"2026-07-18", "2026-07-20"}
+TARGET_DATES = {"2026-08-17", "2026-08-18", "2026-08-19", "2026-08-20"}
 REALERT_TIMES = 3
 
 STATE_FILE = Path(__file__).parent / "state.json"
