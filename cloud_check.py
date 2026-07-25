@@ -28,7 +28,7 @@ LISTING_URL = (
     "?startdate=2026-07-10&enddate=2026-08-29"
 )
 PRODUCTION_TITLE = "The Cherry Orchard"
-TARGET_DATES = {"2026-08-17", "2026-08-18", "2026-08-19", "2026-08-20"}
+TARGET_DATES = {"2026-08-17", "2026-08-18", "2026-08-19", "2026-08-20", "2026-08-21"}
 REALERT_TIMES = 3
 
 STATE_FILE = Path(__file__).parent / "state.json"
