@@ -1,4 +1,4 @@
-name: Cherry Orchard ticket check
+name: Salzburg VPO-Muti ticket check
 
 on:
   schedule:
