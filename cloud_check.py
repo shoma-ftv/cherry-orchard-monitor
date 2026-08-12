@@ -2,10 +2,10 @@
 """
 Cloud ticket monitor, run by GitHub Actions.
 
-Watches the Salzburg Festival "Vienna Philhamonic · Muti" concert
-(Sat 15 Aug 2026, 11:00, Grosses Festspielhaus) and emails via Gmail
-SMTP when the buy button goes live. State is kept in state.json
-(committed back by the workflow) so alerts fire on transitions.
+Watches the Salzburg Festival "Vienna Philhamonic · Muti" performances
+(Sat 15 Aug 2026 11:00 and Sun 16 Aug 2026 21:00, Grosses Festspielhaus)
+and emails via Gmail SMTP when a buy button goes live. State is kept in
+state.json (committed back by the workflow) so alerts fire on transitions.
 
 Required env vars (set as GitHub Actions secrets):
   GMAIL_USER, GMAIL_APP_PASSWORD, EMAIL_TO
@@ -22,10 +22,13 @@ from datetime import datetime, timezone
 from email.message import EmailMessage
 from pathlib import Path
 
-JT_ID = 8665
-API_URL = f"https://www.salzburgerfestspiele.at/vue/availability/en/event/{JT_ID}"
+API_URL_TEMPLATE = "https://www.salzburgerfestspiele.at/vue/availability/en/event/{jt_id}"
 EVENT_URL = "https://www.salzburgerfestspiele.at/en/p/vienna-philhamonic-muti-2026#tickets"
-EVENT_LABEL = "Vienna Philharmonic · Muti — Sat 15 Aug 2026, 11:00"
+
+EVENTS = {
+    "8665": "Sat 15 Aug 2026, 11:00",
+    "8666": "Sun 16 Aug 2026, 21:00",
+}
 
 NOT_BUYABLE = {"UNAVAILABLE", "SOLD-OUT", "SOLDOUT", "CANCELLED"}
 CATEGORY_PRICES = {
@@ -46,9 +49,9 @@ USER_AGENT = (
 )
 
 
-def fetch_availability() -> dict:
+def fetch_availability(jt_id: str) -> dict:
     req = urllib.request.Request(
-        API_URL,
+        API_URL_TEMPLATE.format(jt_id=jt_id),
         headers={
             "Accept": "application/json",
             "User-Agent": USER_AGENT,
@@ -86,44 +89,50 @@ def main() -> None:
         state = json.loads(STATE_FILE.read_text())
     except (FileNotFoundError, json.JSONDecodeError):
         state = {}
-    if "buyable" not in state:  # reset leftover Cherry Orchard state shape
-        state = {"buyable": False, "realerts_left": 0}
+    events_state = state.setdefault("events", {})
 
-    data = fetch_availability()
-    button_type = ((data.get("button") or {}).get("type") or "").strip().upper()
-    availabilities = data.get("availabilities") or {}
-    total = sum(v for v in availabilities.values() if isinstance(v, (int, float)))
-    buyable = bool(button_type) and button_type not in NOT_BUYABLE
+    alerts = []
+    for jt_id, when in EVENTS.items():
+        data = fetch_availability(jt_id)
+        button_type = ((data.get("button") or {}).get("type") or "").strip().upper()
+        availabilities = data.get("availabilities") or {}
+        total = sum(v for v in availabilities.values() if isinstance(v, (int, float)))
+        buyable = bool(button_type) and button_type not in NOT_BUYABLE
 
-    print(f"button={button_type!r} total_seats={total} avail={availabilities}")
+        print(f"[{jt_id}] {when}: button={button_type!r} total_seats={total} "
+              f"avail={availabilities}")
 
-    was_buyable = state.get("buyable", False)
-    realerts_left = state.get("realerts_left", 0)
+        prev = events_state.get(jt_id, {})
+        was_buyable = prev.get("buyable", False)
+        realerts_left = prev.get("realerts_left", 0)
 
-    if buyable and not was_buyable:
+        if buyable and not was_buyable:
+            alerts.append(f"{when} — buy button is LIVE ({button_type}). "
+                          f"Seats: {describe_seats(availabilities)}")
+            realerts_left = REALERT_TIMES
+        elif buyable and realerts_left > 0:
+            alerts.append(f"{when} — still available: {describe_seats(availabilities)}")
+            realerts_left -= 1
+
+        events_state[jt_id] = {
+            "when": when,
+            "buyable": buyable,
+            "button_type": button_type,
+            "availabilities": availabilities,
+            "realerts_left": realerts_left,
+            "last_checked": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        }
+
+    if alerts:
         send_email(
-            "🎻 Salzburg TICKETS AVAILABLE — VPO/Muti Aug 15 (cloud check)",
-            f"{EVENT_LABEL}: the buy button is live ({button_type}).\n"
-            f"Seats: {describe_seats(availabilities)}\n\n"
-            f"Book: {EVENT_URL}\n\n"
+            "🎻 Salzburg TICKETS AVAILABLE — VPO/Muti (cloud check)",
+            "Vienna Philharmonic · Muti, Grosses Festspielhaus:\n\n"
+            + "\n\n".join(alerts)
+            + f"\n\nBook: {EVENT_URL}\n\n"
             "(Sent by the GitHub Actions cloud monitor — your Mac may have "
             "already texted you too.)",
         )
-        realerts_left = REALERT_TIMES
-    elif buyable and realerts_left > 0:
-        send_email(
-            "🎻 Reminder: VPO/Muti Aug 15 still available (cloud check)",
-            f"{EVENT_LABEL}: {describe_seats(availabilities)}\n\nBook: {EVENT_URL}",
-        )
-        realerts_left -= 1
 
-    state = {
-        "buyable": buyable,
-        "button_type": button_type,
-        "availabilities": availabilities,
-        "realerts_left": realerts_left,
-        "last_checked": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-    }
     STATE_FILE.write_text(json.dumps(state, indent=2) + "\n")
 
 
