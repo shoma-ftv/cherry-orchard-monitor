@@ -2,16 +2,16 @@
   "buyable": false,
   "button_type": "UNAVAILABLE",
   "availabilities": {
-    "1": 0,
-    "2": 1,
+    "1": 1,
+    "2": 0,
     "3": 0,
-    "4": 2,
+    "4": 3,
     "5": 0,
-    "6": 2,
+    "6": 1,
     "7": 0,
     "8": 0,
     "10": 0
   },
   "realerts_left": 0,
-  "last_checked": "2026-08-12T09:22:35+00:00"
+  "last_checked": "2026-08-12T10:33:15+00:00"
 }
