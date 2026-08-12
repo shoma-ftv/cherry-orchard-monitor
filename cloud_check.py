@@ -27,7 +27,6 @@ EVENT_URL = "https://www.salzburgerfestspiele.at/en/p/vienna-philhamonic-muti-20
 
 EVENTS = {
     "8665": "Sat 15 Aug 2026, 11:00",
-    "8666": "Sun 16 Aug 2026, 21:00",
 }
 
 NOT_BUYABLE = {"UNAVAILABLE", "SOLD-OUT", "SOLDOUT", "CANCELLED"}
