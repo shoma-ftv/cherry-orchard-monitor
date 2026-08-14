@@ -2,21 +2,21 @@
   "events": {
     "8665": {
       "when": "Sat 15 Aug 2026, 11:00",
-      "buyable": true,
-      "button_type": "PURCHASE",
+      "buyable": false,
+      "button_type": "UNAVAILABLE",
       "availabilities": {
         "1": 0,
         "2": 0,
         "3": 0,
         "4": 0,
-        "5": 1,
+        "5": 0,
         "6": 0,
         "7": 0,
         "8": 0,
         "10": 0
       },
       "realerts_left": 1,
-      "last_checked": "2026-08-14T08:45:06+00:00"
+      "last_checked": "2026-08-14T09:45:22+00:00"
     },
     "8666": {
       "when": "Sun 16 Aug 2026, 21:00",
